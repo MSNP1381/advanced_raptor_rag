@@ -1,5 +1,15 @@
 # Advanced RAG + Raptor
+---
 
+This project was conducted in partnership with [remolab](https://remolab.fr/), a startup solutions hub.
+
+<p align="center">
+    <a href="https://remolab.fr/">
+        <img src="./misc/RemoLogo.png" alt="Remolab Logo" width="200"/>
+    </a>
+</p>
+
+---
 An advanced Retrieval-Augmented Generation (RAG) system with Raptor integration for enhanced semantic search and document retrieval.
 
 ```mermaid
