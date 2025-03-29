@@ -1,0 +1,14 @@
+langchain_postgres
+langchain-text-splitters
+unstructured[md] 
+langchain_postgres 
+langchain-google-vertexai 
+semantic-text-splitter
+langchain 
+umap-learn 
+scikit-learn 
+langchain_community 
+tiktoken 
+langchain-openai 
+semantic-text-splitter
+sentence-transformers
