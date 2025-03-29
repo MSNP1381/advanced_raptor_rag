@@ -1,11 +1,9 @@
-from functools import lru_cache
 import glob
 import json
 import tiktoken
 from typing import Dict, List, Optional, Tuple
 import logging
 import vertexai
-import asyncio
 from langchain_google_vertexai import VertexAIEmbeddings, ChatVertexAI
 import numpy as np
 import pandas as pd
@@ -14,7 +12,6 @@ from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from sklearn.mixture import GaussianMixture
 import os
-from pathlib import Path
 
 RANDOM_SEED = 224  # Fixed seed for reproducibility
 summary_dict = {}
@@ -159,7 +156,7 @@ def GMM_cluster(embeddings: np.ndarray, threshold: float, random_state: int = 0)
     labels = [np.where(prob > threshold)[0] for prob in probs]
 
     # Log distribution of assignments
-    cluster_counts = [len(l) for l in labels]
+    cluster_counts = [len(label) for label in labels]
     avg_clusters_per_item = sum(cluster_counts) / len(labels)
     logger.info(
         f"GMM clustering complete. Avg clusters per item: {avg_clusters_per_item:.2f}"
@@ -190,7 +187,7 @@ def perform_clustering(
 
     if len(embeddings) <= dim + 1:
         logger.warning(
-            f"Insufficient data for clustering ({len(embeddings)} <= {dim+1}). Assigning all to cluster 0."
+            f"Insufficient data for clustering ({len(embeddings)} <= {dim + 1}). Assigning all to cluster 0."
         )
         return [np.array([0]) for _ in range(len(embeddings))]
 
@@ -209,7 +206,7 @@ def perform_clustering(
 
     # Iterate through each global cluster to perform local clustering
     for i in range(n_global_clusters):
-        logger.info(f"Processing global cluster {i+1}/{n_global_clusters}")
+        logger.info(f"Processing global cluster {i + 1}/{n_global_clusters}")
         # Extract embeddings belonging to the current global cluster
         global_cluster_indices = np.array([i in gc for gc in global_clusters])
         global_cluster_embeddings_ = embeddings[global_cluster_indices]
@@ -384,12 +381,12 @@ async def embed(texts, max_tokens_per_request=1_000_000, batch_size=512):
         total_batches = (len(texts) + batch_size - 1) // batch_size
         for i in range(0, len(texts) + 1, batch_size):
             batch_texts = texts[i : i + batch_size]
-            batch_filename = f"embd_{len(texts)}_out/batch_{i//batch_size}.npy"
+            batch_filename = f"embd_{len(texts)}_out/batch_{i // batch_size}.npy"
 
             # Check if this batch already exists
 
             logger.info(
-                f"Embedding batch {i//batch_size+1}/{total_batches} ({len(batch_texts)} documents)"
+                f"Embedding batch {i // batch_size + 1}/{total_batches} ({len(batch_texts)} documents)"
             )
 
             # Rough estimate: 1 token ≈ 4 characters
@@ -413,7 +410,7 @@ async def embed(texts, max_tokens_per_request=1_000_000, batch_size=512):
                 for j in range(0, len(batch_texts), sub_batch_size):
                     sub_batch = batch_texts[j : j + sub_batch_size]
                     logger.info(
-                        f"Processing sub-batch {j//sub_batch_size+1}/{(len(batch_texts)+sub_batch_size-1)//sub_batch_size}"
+                        f"Processing sub-batch {j // sub_batch_size + 1}/{(len(batch_texts) + sub_batch_size - 1) // sub_batch_size}"
                     )
                     sub_embeddings = await embd.aembed_documents(sub_batch)
                     batch_embeddings.extend(sub_embeddings)
@@ -476,7 +473,7 @@ async def embed_cluster_texts(texts):
     # Log some statistics about the clustering
     cluster_counts = [len(labels) for labels in cluster_labels]
     logger.info(
-        f"Clustering stats: Avg clusters per document: {sum(cluster_counts)/len(cluster_counts):.2f}"
+        f"Clustering stats: Avg clusters per document: {sum(cluster_counts) / len(cluster_counts):.2f}"
     )
     logger.info(
         f"Documents with no clusters: {sum(1 for c in cluster_counts if c == 0)}"
@@ -561,7 +558,7 @@ Text:
 
     # Prepare data for batch processing
     for i, cluster_id in enumerate(all_clusters):
-        logger.info(f"Preparing cluster {i+1}/{len(all_clusters)} (ID: {cluster_id})")
+        logger.info(f"Preparing cluster {i + 1}/{len(all_clusters)} (ID: {cluster_id})")
         df_cluster = expanded_df[expanded_df["cluster"] == cluster_id]
         logger.debug(f"Cluster {cluster_id} contains {len(df_cluster)} documents")
 
@@ -576,7 +573,7 @@ Text:
         batch_cluster_ids = cluster_ids[batch_start:batch_end]
 
         logger.info(
-            f"Processing batch {batch_start//batch_size + 1}/{(len(formatted_texts) + batch_size - 1)//batch_size}"
+            f"Processing batch {batch_start // batch_size + 1}/{(len(formatted_texts) + batch_size - 1) // batch_size}"
         )
 
         # Filter out texts that are already in the summary_dict
@@ -677,7 +674,7 @@ async def recursive_embed_cluster_summarize(
 
     if level < n_levels and unique_clusters > 1:
         logger.info(
-            f"Proceeding to level {level+1} with {len(df_summary['summaries'])} summaries"
+            f"Proceeding to level {level + 1} with {len(df_summary['summaries'])} summaries"
         )
         # Use summaries as the input texts for the next level of recursion
         new_texts = df_summary["summaries"].tolist()

@@ -1,24 +1,23 @@
-#%%
+# %%
 import matplotlib.pyplot as plt
 from langchain_community.document_loaders import UnstructuredMarkdownLoader
 from langchain_community.document_loaders import DirectoryLoader
-from raptor import *
+from raptor import num_tokens_from_string, recursive_embed_cluster_summarize
 import pickle
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-import vertexai
 import asyncio
-from dotenv import load_dotenv,find_dotenv
-from langchain_google_vertexai import VertexAIEmbeddings,ChatVertexAI
-load_dotenv(find_dotenv(),override=True)
+from dotenv import load_dotenv, find_dotenv
 
-#%%
+load_dotenv(find_dotenv(), override=True)
+
+# %%
 #######################
 #
 #   load Documents
 #
 ######################
 
-#you can add title and url to document metadata for usage in rag app
+# you can add title and url to document metadata for usage in rag app
 loader = DirectoryLoader(
     "./markdown_output/",
     glob="**/*.md",
@@ -37,7 +36,7 @@ with open("loaded_docs.pickle", "wb") as f:
 docs_texts = [d.page_content for d in docs]
 print("Number of documents:", len(docs_texts))
 
-#%%
+# %%
 
 #######################
 #
@@ -55,12 +54,12 @@ plt.ylabel("Frequency")
 plt.grid(axis="y", alpha=0.75)
 
 plt.savefig("token_counts_histogram.png")
-#%%
+# %%
 
 
 concatenated_content = "\n\n\n --- \n\n\n".join([doc.page_content for doc in docs])
 
-chunk_size_tok = 3600 # choose based on visualization
+chunk_size_tok = 3600  # choose based on visualization
 
 text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
     chunk_size=chunk_size_tok, chunk_overlap=0
@@ -68,15 +67,14 @@ text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
 texts_split = text_splitter.split_text(concatenated_content)
 
 with open("splited_txt.pickle", "wb") as f:
-  texts_split  =pickle.dump( texts_split,f)
+    texts_split = pickle.dump(texts_split, f)
 
 # with open("splited_txt.pickle", "rb") as f:
 #   texts_split  =pickle.load( f)
 
 
-
 print("split done")
-#%%
+# %%
 #######################
 #
 #   run main process
@@ -99,8 +97,9 @@ leaf_texts = texts_split
 
 # Configure and run the recursive embedding and clustering
 loop = asyncio.get_event_loop()
-results = loop.run_until_complete(recursive_embed_cluster_summarize(leaf_texts, level=1, n_levels=3))
-
+results = loop.run_until_complete(
+    recursive_embed_cluster_summarize(leaf_texts, level=1, n_levels=3)
+)
 
 
 def save_results(results, filename):
@@ -125,4 +124,6 @@ def load_results(filename):
     """
     with open(filename, "rb") as f:
         return pickle.load(f)
+
+
 save_results(results, "results.pickle")

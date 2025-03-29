@@ -3,9 +3,6 @@ from langchain_google_vertexai import ChatVertexAI
 from pydantic import BaseModel, Field
 from langchain_core.vectorstores import VectorStoreRetriever
 from langchain_community.document_transformers import LongContextReorder
-from langchain.chains.history_aware_retriever import (
-    create_history_aware_retriever,
-)  # Import the create_history_aware_retriever function
 from langchain_core.prompts import (
     ChatPromptTemplate,
     MessagesPlaceholder,
@@ -27,7 +24,6 @@ def expand_query(
     query: str,
     model: ChatVertexAI,
 ) -> LineList:
-
     QUERY_PROMPT = PromptTemplate(
         input_variables=["question", "institute_name"],
         template=(
@@ -53,7 +49,6 @@ Original question: {question}"""
 def retrieve_expanded_queries(queries, retriever: VectorStoreRetriever):
     print("\n\n\n--------\n\n\n")
     docs = [retriever.invoke(query) for query in queries]
-    docs_dict = {}
     unique_contents = set()
     unique_docs = []
     for sublist in docs:
@@ -66,7 +61,6 @@ def retrieve_expanded_queries(queries, retriever: VectorStoreRetriever):
 
 
 def rerank(unique_contents: list[Document], query):
-
     pairs = []
     for doc in unique_contents:
         pairs.append([query, doc.page_content])
@@ -83,7 +77,6 @@ def rerank(unique_contents: list[Document], query):
 def contextualize_docs(
     llm: ChatVertexAI, retriever: VectorStoreRetriever, query, conversation
 ):
-
     # Define the system prompt for contextualizing the question
     contextualize_q_system_prompt = """You are a contextualization assistant for La Banque Postale's question-answering system. Your task is to take a follow-up question from a user and the history of the previous conversation, and rephrase the follow-up question into a single, standalone question that includes all the necessary context.
 

@@ -1,5 +1,11 @@
 import os
+import pickle
 from dotenv import load_dotenv, find_dotenv
+import vertexai
+
+from langchain_google_vertexai import VertexAIEmbeddings
+from langchain_postgres import PGVector
+from tqdm import tqdm
 
 load_dotenv(find_dotenv(), override=True)
 
@@ -7,21 +13,17 @@ load_dotenv(find_dotenv(), override=True)
 PROJECT_ID = "<my-prj>"  # @param {type:"string"}
 LOCATION = "us-central1"  # @param {type:"string"}
 
-import vertexai
 
 vertexai.init(project=PROJECT_ID, location=LOCATION)
 
 # %%
 
 
-from langchain_google_vertexai import VertexAIEmbeddings, ChatVertexAI
-
 embd = VertexAIEmbeddings(model_name="text-embedding-005")
 
 
 # %%
 
-from langchain_postgres import PGVector
 
 # See docker command above to launch a postgres instance with pgvector enabled.
 connection = os.environ["PG_CONN"]
@@ -39,7 +41,6 @@ retriever = vectorstore.as_retriever()
 
 
 # %%
-import pickle
 
 
 def reset_db(vectorstore):
@@ -84,7 +85,6 @@ def load_results(filename):
 all_texts = load_results("all_texts.pickle")
 
 # %%
-from tqdm import tqdm
 
 batch_size = 1000  # Adjust based on your vector dimensions
 for i in tqdm(range(0, len(all_texts), batch_size)):

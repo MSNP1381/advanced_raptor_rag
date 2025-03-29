@@ -1,7 +1,6 @@
 from copy import deepcopy
 import os
 from typing import List
-from langchain_core.runnables import RunnablePassthrough
 from langchain.prompts import ChatPromptTemplate
 from utils import expand_query, rerank, retrieve_expanded_queries, contextualize_docs
 from dotenv import load_dotenv
@@ -53,8 +52,9 @@ vectorstore = PGVector(
     use_jsonb=True,
 )
 # Now, use all_texts to build the vectorstore with Chroma
-retriever = vectorstore.as_retriever(        search_type="mmr",
-        search_kwargs={'k': 6, 'lambda_mult': 0.5,'fetch_k': 50})
+retriever = vectorstore.as_retriever(
+    search_type="mmr", search_kwargs={"k": 6, "lambda_mult": 0.5, "fetch_k": 50}
+)
 # Prompt
 human_message = """\
 <Question>
@@ -68,7 +68,7 @@ prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-"""You are a friendly and knowledgeable virtual assistant. Your primary role is to answer questions accurately and concisely, *exclusively* using the information found in the provided documents.
+            """You are a friendly and knowledgeable virtual assistant. Your primary role is to answer questions accurately and concisely, *exclusively* using the information found in the provided documents.
 
 Here's how you will operate:
 
@@ -95,10 +95,10 @@ Your overall goal is to provide clear, accurate, and helpful information from th
 def format_docs(docs):
     formatted_docs = ""
     for doc in docs:
-        if 'url'in doc.metadata:
-            appeded_txt=f"<title>{doc.metadata['title']}</title>\n<url>{doc.metadata['url']}</url>"
+        if "url" in doc.metadata:
+            appeded_txt = f"<title>{doc.metadata['title']}</title>\n<url>{doc.metadata['url']}</url>"
         else:
-            appeded_txt=f"<title>provided from summary not any source</title>"
+            appeded_txt = "<title>provided from summary not any source</title>"
         formatted_docs += f"""
 
 <Context>
@@ -111,23 +111,24 @@ def format_docs(docs):
 """
     return formatted_docs
 
-def format_docs_ref(docs:List[Document]):
-    output_txt="\n\n\n"
-    for index,doc in enumerate(docs):
-        doc_metadata=doc.metadata
+
+def format_docs_ref(docs: List[Document]):
+    output_txt = "\n\n\n"
+    for index, doc in enumerate(docs):
+        doc_metadata = doc.metadata
         if "url" in doc_metadata:
-            #add #source url as reference in markdown fromat to list of sources
-            output_txt+=f"[source{index+1}]({doc_metadata['url']}) | "
+            # add #source url as reference in markdown fromat to list of sources
+            output_txt += f"[source{index + 1}]({doc_metadata['url']}) | "
         else:
-            output_txt+=f"[source{index+1}](#summary) | "
+            output_txt += f"[source{index + 1}](#summary) | "
     return output_txt
+
+
 # Chain
 rag_chain = (
     # {"context":  | format_docs, "question": RunnablePassthrough()}
     # |
-    prompt
-    | model
-    | StrOutputParser()
+    prompt | model | StrOutputParser()
 )
 
 # Display chat history
@@ -149,10 +150,12 @@ if user_query_init := st.chat_input("Ask about la post..."):
             conversation=(st.session_state.conversation),
         )
     else:
-        user_query = ""+user_query_init
+        user_query = "" + user_query_init
         print(user_query)
-    st.session_state.messages.append({"role": "user", "content": deepcopy(user_query_init)})
-    
+    st.session_state.messages.append(
+        {"role": "user", "content": deepcopy(user_query_init)}
+    )
+
     # Display user message
     with st.chat_message("user"):
         st.markdown(user_query_init)
@@ -180,7 +183,7 @@ if user_query_init := st.chat_input("Ask about la post..."):
                 )
             )
         st.session_state.conversation.append(("ai", response))
-    st.markdown(response+format_docs_ref(reordered_docs))
+    st.markdown(response + format_docs_ref(reordered_docs))
 
     # Add assistant response to chat history
     st.session_state.messages.append({"role": "assistant", "content": response})
